@@ -1,7 +1,7 @@
 import UIKit
 import WebKit
 
-fileprivate let UnsplashAuthorizeURLString = "https://unsplash.com/oauth/authorize"
+fileprivate let unsplashAuthorizeURLString = "https://unsplash.com/oauth/authorize"
 
 protocol WebViewViewControllerDelegate: AnyObject {
     func webViewViewController(_ vc: WebViewViewController, didAuthenticateWithCode code: String)
@@ -16,22 +16,31 @@ final class WebViewViewController: UIViewController {
     @IBAction private func didTapBackButton(_ sender: Any?) {
         delegate?.webViewViewControllerDidCancel(self)
     }
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         webView.navigationDelegate = self
         loadAuthorizationRequest()
     }
-
+    
     private func loadAuthorizationRequest() {
-        var urlComponents = URLComponents(string: UnsplashAuthorizeURLString)!
+        guard var urlComponents = URLComponents(string: unsplashAuthorizeURLString) else {
+            print("❌ Ошибка: Невозможно создать URLComponents из строки \(unsplashAuthorizeURLString)")
+            return
+        }
         urlComponents.queryItems = [
             URLQueryItem(name: "client_id", value: Constants.accessKey),
             URLQueryItem(name: "redirect_uri", value: Constants.redirectURI),
             URLQueryItem(name: "response_type", value: "code"),
             URLQueryItem(name: "scope", value: Constants.accessScope)
         ]
-        let request = URLRequest(url: urlComponents.url!)
+        
+        guard let url = urlComponents.url else {
+            print("❌ Ошибка: Невозможно получить URL из URLComponents \(urlComponents)")
+            return
+        }
+        
+        let request = URLRequest(url: url)
         webView.load(request)
     }
 }
@@ -45,7 +54,7 @@ extension WebViewViewController: WKNavigationDelegate {
             decisionHandler(.allow)
         }
     }
-
+    
     private func code(from navigationAction: WKNavigationAction) -> String? {
         if
             let url = navigationAction.request.url,

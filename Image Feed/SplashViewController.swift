@@ -7,7 +7,6 @@ final class SplashViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
-        storage.clearToken()
         // Проверяем наличие токена в хранилище
         if let token = storage.token {
             print("Токен найден: \(token)")

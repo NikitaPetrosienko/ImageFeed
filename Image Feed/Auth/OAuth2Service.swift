@@ -5,9 +5,16 @@ final class OAuth2Service {
     private init () {}
     
     func fetchOAuthToken(code: String, completion: @escaping (Result<String, Error>) -> Void) {
-        let tokenURL = URL(string: "https://unsplash.com/oauth/token")!
+        guard let tokenURL = Constants.tokenURL else {
+            print("❌ Ошибка: Невозможно создать URL для токена")
+            return
+        }
+
+        guard var urlComponents = URLComponents(url: tokenURL, resolvingAgainstBaseURL: false) else {
+            print("❌ Ошибка: Невозможно создать URLComponents из URL \(tokenURL)")
+            return
+        }
         
-        var urlComponents = URLComponents(url: tokenURL, resolvingAgainstBaseURL: false)!
         urlComponents.queryItems = [
             URLQueryItem(name: "client_id", value: Constants.accessKey),
             URLQueryItem(name: "client_secret", value: Constants.secretKey),
@@ -16,12 +23,18 @@ final class OAuth2Service {
             URLQueryItem(name: "grant_type", value: "authorization_code")
         ]
         
-        var request = URLRequest(url: urlComponents.url!)
+        guard let url = urlComponents.url else {
+            print("❌ Ошибка: Невозможно получить URL из URLComponents \(urlComponents)")
+            return
+        }
+        
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
+                print("❌ Ошибка при выполнении запроса: \(error.localizedDescription)")
                 completion(.failure(error))
                 return
             }

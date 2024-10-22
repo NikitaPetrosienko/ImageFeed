@@ -8,7 +8,12 @@ enum Constants {
     
     static let accessScope = "public+read_user+write_likes"
     
-    
-    static let defaultBaseURL = URL(string: "https://api.unsplash.com")!
+    static let tokenURL = URL(string: "https://unsplash.com/oauth/token")
+    static let defaultBaseURL: URL = {
+        guard let url = URL(string: "https://api.unsplash.com") else {
+            fatalError("Невозможно создать URL из строки.")
+        }
+        return url
+    }()
 }
 
