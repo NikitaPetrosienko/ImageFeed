@@ -10,6 +10,9 @@ protocol WebViewViewControllerDelegate: AnyObject {
 
 final class WebViewViewController: UIViewController {
     weak var delegate: WebViewViewControllerDelegate?
+    
+    private var estimatedProgressObservation: NSKeyValueObservation?
+    
     @IBOutlet private var webView: WKWebView!
     @IBOutlet private var progressView: UIProgressView!
     
@@ -21,6 +24,12 @@ final class WebViewViewController: UIViewController {
         super.viewDidLoad()
         webView.navigationDelegate = self
         loadAuthorizationRequest()
+        
+        estimatedProgressObservation = webView.observe(\.estimatedProgress, options: .new) { [weak self] _, change in
+            guard let self = self else { return }
+            self.progressView.progress = Float(self.webView.estimatedProgress)
+            
+        }
     }
     
     private func loadAuthorizationRequest() {
