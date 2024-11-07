@@ -5,7 +5,6 @@ final class ProfileViewController: UIViewController {
     private let profileService = ProfileService.shared
     private var profileImageServiceObserver: NSObjectProtocol?
 
-    
     private let avatarImageView: UIImageView = {
         let imageView = UIImageView(image: UIImage(named: "avatar"))
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -84,23 +83,31 @@ final class ProfileViewController: UIViewController {
     }
     
     private func observeProfileImageUpdates() {
-            profileImageServiceObserver = NotificationCenter.default.addObserver(
-                forName: ProfileImageService.didChangeNotification,
-                object: nil,
-                queue: .main
-            ) { [weak self] notification in
-                guard let self = self else { return }
-                self.updateAvatar()
+        profileImageServiceObserver = NotificationCenter.default.addObserver(
+            forName: ProfileImageService.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            self.updateAvatar()
+            self.updateProfileDetails()
+        }
+    }
+    
+    private func updateProfileDetails() {
+        guard let profile = profileService.profile else {
+            profileService.loadProfile { [weak self] in
+                DispatchQueue.main.async {
+                    self?.updateProfileDetails()
+                }
             }
+            return
         }
         
-        private func updateProfileDetails() {
-            guard let profile = profileService.profile else { return }
-            
-            nameLabel.text = profile.name
-            loginNameLabel.text = profile.loginName
-            descriptionLabel.text = profile.bio
-        }
+        nameLabel.text = profile.name
+        loginNameLabel.text = profile.loginName
+        descriptionLabel.text = profile.bio
+    }
 
     private func updateAvatar() {
         DispatchQueue.main.async {
@@ -109,7 +116,6 @@ final class ProfileViewController: UIViewController {
                 let avatarURL = URL(string: avatarURLString)
             else { return }
             
-            // Используйте библиотеку для загрузки аватара на главном потоке
             self.avatarImageView.kf.setImage(with: avatarURL)
         }
     }

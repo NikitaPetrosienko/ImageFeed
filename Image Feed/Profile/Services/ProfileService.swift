@@ -12,6 +12,7 @@ final class ProfileService {
             return
         }
         
+        
         var request = URLRequest(url: url)
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") // Заголовок с токеном
         
@@ -39,6 +40,24 @@ final class ProfileService {
         }
         
         task.resume()
+    }
+    func loadProfile(completion: @escaping () -> Void) {
+        guard profile == nil else {
+            completion()
+            return
+        }
+        
+        let token = OAuth2TokenStorage().token ?? ""
+        fetchProfile(token) { [weak self] result in
+            switch result {
+            case .success(let profile):
+                self?.profile = profile
+                completion()
+            case .failure(let error):
+                print("Error loading profile: \(error)")
+                completion()
+            }
+        }
     }
 }
 
