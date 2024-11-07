@@ -8,8 +8,12 @@ final class ProfileViewController: UIViewController {
     private let avatarImageView: UIImageView = {
         let imageView = UIImageView(image: UIImage(named: "avatar"))
         imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.contentMode = .scaleAspectFill
+        imageView.layer.cornerRadius = 35 // Половина от высоты/ширины для создания круга
+        imageView.layer.masksToBounds = true // Обрезает изображение за пределами круга
         return imageView
     }()
+
     
     private let nameLabel: UILabel = {
         let label = UILabel()
@@ -51,6 +55,7 @@ final class ProfileViewController: UIViewController {
         setupViews()
         updateProfileDetails()
         observeProfileImageUpdates()
+        updateAvatar()
     }
     
     private func setupViews() {
@@ -87,14 +92,12 @@ final class ProfileViewController: UIViewController {
             forName: ProfileImageService.didChangeNotification,
             object: nil,
             queue: .main
-        ) { [weak self] _ in
+        ) { [weak self] notification in
             guard let self = self else { return }
-            print("[ProfileViewController]: Received profile image update notification")
             self.updateAvatar()
-            self.updateProfileDetails()
         }
     }
-
+    
     private func updateProfileDetails() {
         guard let profile = profileService.profile else {
             print("Profile is not loaded yet. Requesting profile...") // Лог запроса профиля
@@ -118,24 +121,23 @@ final class ProfileViewController: UIViewController {
     
     private func updateAvatar() {
         DispatchQueue.main.async {
-            guard
-                let avatarURLString = ProfileImageService.shared.avatarURL,
-                let avatarURL = URL(string: avatarURLString)
-            else {
-                print("[ProfileViewController]: Avatar URL is invalid")
+            guard let avatarURLString = ProfileImageService.shared.avatarURL,
+                  let avatarURL = URL(string: avatarURLString) else {
+                print("Avatar URL not found or invalid")
                 return
             }
             
-            print("[ProfileViewController]: Setting avatar with URL: \(avatarURL)")
-            self.avatarImageView.kf.setImage(
-                with: avatarURL,
-                options: [
-                    .cacheOriginalImage, // Кеширование оригинала
-                    .forceRefresh // Принудительное обновление изображения
-                ]
-            )
+            print("Loading avatar from URL: \(avatarURL)")
+            self.avatarImageView.kf.setImage(with: avatarURL, placeholder: UIImage(named: "avatar")) { result in
+                switch result {
+                case .success:
+                    print("Avatar successfully loaded")
+                case .failure(let error):
+                    print("Failed to load avatar: \(error)")
+                }
+            }
         }
     }
-
+    
     
 }
