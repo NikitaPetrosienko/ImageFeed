@@ -6,14 +6,20 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        guard let scene = (scene as? UIWindowScene) else { return }
-        window = UIWindow(windowScene: scene)
-        window?.rootViewController = UIStoryboard(
-            name: "Main",
-            bundle: .main
-        ).instantiateInitialViewController()
-        window?.makeKeyAndVisible()
+        // Проверяем, что у нас есть сцена
+        guard let windowScene = (scene as? UIWindowScene) else { return }
+        
+        // Создаём окно
+        let window = UIWindow(windowScene: windowScene)
+        
+        // Устанавливаем SplashViewController как rootViewController
+        window.rootViewController = SplashViewController()
+        
+        // Делаем окно видимым
+        self.window = window
+        window.makeKeyAndVisible()
     }
+
 
     func sceneDidDisconnect(_ scene: UIScene) {
         // Called as the scene is being released by the system.

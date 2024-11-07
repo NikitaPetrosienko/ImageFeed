@@ -4,7 +4,7 @@ import Kingfisher
 final class ProfileViewController: UIViewController {
     private let profileService = ProfileService.shared
     private var profileImageServiceObserver: NSObjectProtocol?
-
+    
     private let avatarImageView: UIImageView = {
         let imageView = UIImageView(image: UIImage(named: "avatar"))
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -89,13 +89,15 @@ final class ProfileViewController: UIViewController {
             queue: .main
         ) { [weak self] _ in
             guard let self = self else { return }
+            print("[ProfileViewController]: Received profile image update notification")
             self.updateAvatar()
             self.updateProfileDetails()
         }
     }
-    
+
     private func updateProfileDetails() {
         guard let profile = profileService.profile else {
+            print("Profile is not loaded yet. Requesting profile...") // Лог запроса профиля
             profileService.loadProfile { [weak self] in
                 DispatchQueue.main.async {
                     self?.updateProfileDetails()
@@ -104,19 +106,36 @@ final class ProfileViewController: UIViewController {
             return
         }
         
-        nameLabel.text = profile.name
+        nameLabel.text = profile.name.isEmpty ? "Неизвестный пользователь" : profile.name
         loginNameLabel.text = profile.loginName
-        descriptionLabel.text = profile.bio
+        descriptionLabel.text = profile.bio ?? "Описание отсутствует"
+        
+        print("Profile details updated:") // Лог обновления профиля
+        print("Name: \(profile.name)")
+        print("Login Name: \(profile.loginName)")
+        print("Bio: \(profile.bio ?? "nil")")
     }
-
+    
     private func updateAvatar() {
         DispatchQueue.main.async {
             guard
                 let avatarURLString = ProfileImageService.shared.avatarURL,
                 let avatarURL = URL(string: avatarURLString)
-            else { return }
+            else {
+                print("[ProfileViewController]: Avatar URL is invalid")
+                return
+            }
             
-            self.avatarImageView.kf.setImage(with: avatarURL)
+            print("[ProfileViewController]: Setting avatar with URL: \(avatarURL)")
+            self.avatarImageView.kf.setImage(
+                with: avatarURL,
+                options: [
+                    .cacheOriginalImage, // Кеширование оригинала
+                    .forceRefresh // Принудительное обновление изображения
+                ]
+            )
         }
     }
+
+    
 }

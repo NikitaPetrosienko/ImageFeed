@@ -8,16 +8,19 @@ final class ProfileImageService {
     
     static let didChangeNotification = Notification.Name("ProfileImageServiceDidChange")
 
-    // Метод для загрузки URL аватарки
     func fetchProfileImageURL(username: String, completion: @escaping (Result<String, Error>) -> Void) {
         guard let token = OAuth2TokenStorage().token else {
-            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Token not found"])))
+            let error = NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Token not found"])
+            print("[ProfileImageService]: Token error - \(error.localizedDescription)") // Лог отсутствия токена
+            completion(.failure(error))
             return
         }
 
         let urlString = "https://api.unsplash.com/users/\(username)"
         guard let url = URL(string: urlString) else {
-            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
+            let error = NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
+            print("[ProfileImageService]: URL error - \(error.localizedDescription)") // Лог ошибки URL
+            completion(.failure(error))
             return
         }
 
@@ -26,12 +29,15 @@ final class ProfileImageService {
 
         URLSession.shared.dataTask(with: request) { [weak self] data, _, error in
             if let error = error {
+                print("[ProfileImageService]: Network error - \(error.localizedDescription)") // Лог ошибки сети
                 completion(.failure(error))
                 return
             }
 
             guard let data = data else {
-                completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data"])))
+                let error = NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data"])
+                print("[ProfileImageService]: No data received") // Лог отсутствия данных
+                completion(.failure(error))
                 return
             }
 
@@ -39,19 +45,24 @@ final class ProfileImageService {
                 let userResult = try JSONDecoder().decode(UserResult.self, from: data)
                 let profileImageURL = userResult.profileImage.small
                 self?.avatarURL = profileImageURL
+                print("[ProfileImageService]: Avatar URL fetched - \(profileImageURL)") // Лог успешного получения URL
                 completion(.success(profileImageURL))
                 
                 NotificationCenter.default.post(
                     name: ProfileImageService.didChangeNotification,
                     object: self,
                     userInfo: ["URL": profileImageURL]
+                    
                 )
+                print("[ProfileImageService]: Notification posted with URL: \(profileImageURL)")
             } catch {
+                print("[ProfileImageService]: Decoding error - \(error.localizedDescription)") // Лог ошибки декодирования
                 completion(.failure(error))
             }
         }.resume()
     }
 }
+
 
 // Модель для декодирования ответа
 struct UserResult: Codable {

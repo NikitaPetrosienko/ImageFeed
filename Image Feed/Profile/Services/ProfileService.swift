@@ -12,7 +12,6 @@ final class ProfileService {
             return
         }
         
-        
         var request = URLRequest(url: url)
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") // Заголовок с токеном
         
@@ -30,6 +29,11 @@ final class ProfileService {
             }
             
             do {
+                // Логируем полный JSON ответ для проверки
+                if let json = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers) {
+                    print("[ProfileService]: Full JSON response: \(json)")
+                }
+                
                 let profileResult = try JSONDecoder().decode(ProfileResult.self, from: data)
                 let profile = Profile(from: profileResult)
                 self.profile = profile
@@ -67,6 +71,13 @@ struct ProfileResult: Codable {
     let firstName: String?
     let lastName: String?
     let bio: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case username
+        case firstName = "first_name"
+        case lastName = "last_name"
+        case bio
+    }
 }
 
 struct Profile {
@@ -77,8 +88,12 @@ struct Profile {
     
     init(from profileResult: ProfileResult) {
         self.username = profileResult.username
-        self.name = "\(profileResult.firstName ?? "") \(profileResult.lastName ?? "")"
+        self.name = "\(profileResult.firstName ?? "") \(profileResult.lastName ?? "")".trimmingCharacters(in: .whitespaces)
         self.loginName = "@\(profileResult.username)"
         self.bio = profileResult.bio
+        
+        // Логирование для проверки значения имени
+        print("[Profile]: Initialized - name: \(name), loginName: \(loginName), bio: \(bio ?? "No bio")")
     }
 }
+
