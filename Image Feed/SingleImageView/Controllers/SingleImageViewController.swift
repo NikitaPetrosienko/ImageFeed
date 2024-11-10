@@ -1,6 +1,7 @@
 import UIKit
 
 final class SingleImageViewController: UIViewController {
+    var imageURL: URL? // Добавляем свойство imageURL для передачи URL изображения
     var image: UIImage? {
         didSet {
             guard isViewLoaded, let image else { return }
@@ -23,6 +24,10 @@ final class SingleImageViewController: UIViewController {
         imageView.image = image
         imageView.frame.size = image.size
         rescaleAndCenterImageInScrollView(image: image)
+        
+        if let url = imageURL {
+                    imageView.kf.setImage(with: url) // Загружаем изображение по URL с помощью Kingfisher
+                }
     }
 
     @IBAction private func didTapBackButton() {
