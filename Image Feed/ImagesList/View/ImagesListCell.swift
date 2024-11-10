@@ -2,8 +2,10 @@ import UIKit
 import Kingfisher
 
 protocol ImagesListCellDelegate: AnyObject {
-    func imageListCellDidTapLike(_ cell: ImagesListCell)
+    func imagesListCellDidTapLike(_ cell: ImagesListCell) // Убедитесь, что имя функции здесь точно совпадает
 }
+
+
 
 final class ImagesListCell: UITableViewCell {
     static let reuseIdentifier = "ImagesListCell"
@@ -25,8 +27,8 @@ final class ImagesListCell: UITableViewCell {
     }
     
     @objc private func likeButtonClicked() {
-        delegate?.imageListCellDidTapLike(self)
-    }
+            delegate?.imagesListCellDidTapLike(self) // Проверка, что вызов идет правильно
+        }
     
     func setIsLiked(_ isLiked: Bool) {
         let imageName = isLiked ? "like_button_on" : "like_button_off"

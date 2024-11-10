@@ -52,7 +52,8 @@ final class ImagesListService {
                         welcomeDescription: result.description,
                         thumbImageURL: result.urls.thumb,
                         largeImageURL: result.urls.full,
-                        isLiked: result.likedByUser
+                        isLiked: result.likedByUser, 
+                        fullImageURL: result.urls.full
                     )
                 }
                 
@@ -118,6 +119,7 @@ struct Photo {
     let thumbImageURL: String
     let largeImageURL: String
     var isLiked: Bool
+    let fullImageURL: String // Добавлено поле для полноразмерного изображения
 }
 
 struct PhotoResult: Codable {
