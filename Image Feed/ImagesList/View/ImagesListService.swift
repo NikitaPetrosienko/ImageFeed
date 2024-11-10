@@ -71,6 +71,43 @@ final class ImagesListService {
         
         task.resume()
     }
+    
+    func changeLike(photoId: String, isLike: Bool, completion: @escaping (Result<Void, Error>) -> Void) {
+        let endpoint = isLike ? "like" : "like"
+        guard let url = URL(string: "https://api.unsplash.com/photos/\(photoId)/\(endpoint)") else {
+            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = isLike ? "POST" : "DELETE"
+        request.setValue("Bearer \(OAuth2TokenStorage().token ?? "")", forHTTPHeaderField: "Authorization")
+        
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                print("Status Code: \(httpResponse.statusCode)")
+                if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
+                    // Успешный запрос
+                    completion(.success(()))
+                } else {
+                    // Обработка ошибки с детальным статус-кодом
+                    let error = NSError(
+                        domain: "",
+                        code: httpResponse.statusCode,
+                        userInfo: [NSLocalizedDescriptionKey: "Failed to change like status with status code \(httpResponse.statusCode)"]
+                    )
+                    completion(.failure(error))
+                }
+            }
+        }
+        
+        task.resume()
+    }
 }
 
 struct Photo {
@@ -80,7 +117,7 @@ struct Photo {
     let welcomeDescription: String?
     let thumbImageURL: String
     let largeImageURL: String
-    let isLiked: Bool
+    var isLiked: Bool
 }
 
 struct PhotoResult: Codable {

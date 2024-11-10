@@ -1,7 +1,7 @@
 import UIKit
 import Kingfisher
 
-final class ImagesListViewController: UIViewController {
+final class ImagesListViewController: UIViewController, ImagesListCellDelegate {
     private let showSingleImageSegueIdentifier = "ShowSingleImage"
     private let imagesListService = ImagesListService.shared
     
@@ -51,13 +51,41 @@ final class ImagesListViewController: UIViewController {
     
     @objc private func updateTableViewAnimated() {
         let oldCount = photos.count
-        let newCount = imagesListService.photos.count
-        photos = imagesListService.photos
+        photos = imagesListService.photos // Обновляем photos до batch updates
+        let newCount = photos.count
         
         if oldCount != newCount {
             let indexPaths = (oldCount..<newCount).map { IndexPath(row: $0, section: 0) }
             tableView.performBatchUpdates {
                 tableView.insertRows(at: indexPaths, with: .automatic)
+            }
+        }
+    }
+    
+    
+    func imageListCellDidTapLike(_ cell: ImagesListCell) {
+        guard let indexPath = tableView.indexPath(for: cell) else { return }
+        let photo = photos[indexPath.row]
+        
+        // Блокируем UI, чтобы предотвратить срабатывание гонки
+        UIBlockingProgressHUD.show()
+        
+        imagesListService.changeLike(photoId: photo.id, isLike: !photo.isLiked) { [weak self] result in
+            DispatchQueue.main.async {
+                UIBlockingProgressHUD.dismiss()
+                
+                switch result {
+                case .success:
+                    // Обновление массива `photos` после успешного запроса
+                    self?.photos = self?.imagesListService.photos ?? []
+                    // Обновление ячейки с новым состоянием лайка
+                    cell.setIsLiked(self?.photos[indexPath.row].isLiked ?? false)
+                case .failure:
+                    // Обработка ошибки (например, показ алерта)
+                    let alert = UIAlertController(title: "Ошибка", message: "Не удалось изменить лайк.", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default))
+                    self?.present(alert, animated: true)
+                }
             }
         }
     }
@@ -69,15 +97,19 @@ extension ImagesListViewController: UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: ImagesListCell.reuseIdentifier, for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: ImagesListCell.reuseIdentifier, for: indexPath) as! ImagesListCell
         
-        guard let imageListCell = cell as? ImagesListCell else {
-            return UITableViewCell()
-        }
+        // Настройка ячейки
+        let photo = photos[indexPath.row]
+        cell.delegate = self // Устанавливаем делегат
         
-        configCell(for: imageListCell, with: indexPath)
+        // Конфигурируем ячейку
+        cell.dateLabel.text = photo.createdAt.map { DateFormatter.localizedString(from: $0, dateStyle: .medium, timeStyle: .none) }
+        let likeImage = photo.isLiked ? UIImage(named: "like_button_on") : UIImage(named: "like_button_off")
+        cell.likeButton.setImage(likeImage, for: .normal)
+        cell.cellImage.kf.setImage(with: URL(string: photo.thumbImageURL))
         
-        return imageListCell
+        return cell
     }
 }
 
@@ -117,6 +149,24 @@ extension ImagesListViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         if indexPath.row == photos.count - 1 {
             imagesListService.fetchPhotosNextPage()
+        }
+    }
+}
+extension ImagesListViewController {
+    func toggleLike(for photo: Photo, at indexPath: IndexPath) {
+        let isLike = !photo.isLiked
+        imagesListService.changeLike(photoId: photo.id, isLike: isLike) { [weak self] result in
+            switch result {
+            case .success:
+                DispatchQueue.main.async {
+                    // Обновите модель данных
+                    self?.photos[indexPath.row].isLiked = isLike
+                    // Обновите ячейку таблицы
+                    self?.tableView.reloadRows(at: [indexPath], with: .automatic)
+                }
+            case .failure(let error):
+                print("Error updating like status: \(error)")
+            }
         }
     }
 }
