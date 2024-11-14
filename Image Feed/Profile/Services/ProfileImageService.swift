@@ -61,6 +61,10 @@ final class ProfileImageService {
             }
         }.resume()
     }
+    func clearData() {
+            avatarURL = nil  // Удаляем URL аватара
+            print("ProfileImageService: Данные профиля очищены")
+        }
 }
 
 

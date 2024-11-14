@@ -109,6 +109,10 @@ final class ImagesListService {
         
         task.resume()
     }
+    func clearData() {
+            photos.removeAll()
+            print("imagesListService: Данные профиля очищены")// Очищаем список изображений
+        }
 }
 
 struct Photo {

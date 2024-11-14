@@ -31,7 +31,7 @@ final class ProfileService {
             do {
                 // Логируем полный JSON ответ для проверки
                 if let json = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers) {
-                    print("[ProfileService]: Full JSON response: \(json)")
+                    
                 }
                 
                 let profileResult = try JSONDecoder().decode(ProfileResult.self, from: data)
@@ -63,6 +63,10 @@ final class ProfileService {
             }
         }
     }
+    func clearData() {
+            profile = nil
+            print("ProfileService: Данные профиля очищены")// Удаляем сохраненные данные профиля
+        }
 }
 
 // Модели для профиля

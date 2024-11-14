@@ -12,14 +12,13 @@ final class SplashViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(named: "YPBlack")  
+        view.backgroundColor = UIColor(named: "YPBlack")
         setupLogo()
     }
     
     private func setupLogo() {
         view.addSubview(logoImageView)
         
-        // Центрируем логотип на экране
         NSLayoutConstraint.activate([
             logoImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             logoImageView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
@@ -28,10 +27,11 @@ final class SplashViewController: UIViewController {
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        
+        print("Проверка токена в SplashViewController...")
         if let token = storage.token {
             fetchProfile(token: token)
         } else {
+            print("Токен не найден, выполняется переход к AuthViewController")
             showAuthenticationScreen()
         }
     }
@@ -61,8 +61,12 @@ final class SplashViewController: UIViewController {
             return
         }
         
-        let tabBarController = UIStoryboard(name: "Main", bundle: .main)
-            .instantiateViewController(withIdentifier: "TabBarViewController")
+        let storyboard = UIStoryboard(name: "Main", bundle: .main)
+        guard let tabBarController = storyboard.instantiateViewController(withIdentifier: "TabBarViewController") as? UITabBarController else {
+            print("Ошибка: TabBarController не найден")
+            return
+        }
+        
         window.rootViewController = tabBarController
         window.makeKeyAndVisible()
     }

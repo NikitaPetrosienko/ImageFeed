@@ -4,17 +4,16 @@ import Kingfisher
 final class ProfileViewController: UIViewController {
     private let profileService = ProfileService.shared
     private var profileImageServiceObserver: NSObjectProtocol?
-    
+
     private let avatarImageView: UIImageView = {
         let imageView = UIImageView(image: UIImage(named: "avatar"))
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.contentMode = .scaleAspectFill
-        imageView.layer.cornerRadius = 35 // Половина от высоты/ширины для создания круга
-        imageView.layer.masksToBounds = true // Обрезает изображение за пределами круга
+        imageView.layer.cornerRadius = 35
+        imageView.layer.masksToBounds = true
         return imageView
     }()
 
-    
     private let nameLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 23, weight: .semibold)
@@ -22,7 +21,7 @@ final class ProfileViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-    
+
     private let loginNameLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 13)
@@ -30,7 +29,7 @@ final class ProfileViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-    
+
     private let descriptionLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 13)
@@ -38,7 +37,7 @@ final class ProfileViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-    
+
     private let logoutButton: UIButton = {
         let button = UIButton(type: .custom)
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -47,7 +46,7 @@ final class ProfileViewController: UIViewController {
         }
         return button
     }()
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor(named: "YPBlack")
@@ -56,6 +55,7 @@ final class ProfileViewController: UIViewController {
         updateProfileDetails()
         observeProfileImageUpdates()
         updateAvatar()
+        setupLogoutButton()
     }
     
     private func setupViews() {
@@ -100,7 +100,7 @@ final class ProfileViewController: UIViewController {
     
     private func updateProfileDetails() {
         guard let profile = profileService.profile else {
-            print("Profile is not loaded yet. Requesting profile...") // Лог запроса профиля
+            print("Profile is not loaded yet. Requesting profile...")
             profileService.loadProfile { [weak self] in
                 DispatchQueue.main.async {
                     self?.updateProfileDetails()
@@ -113,7 +113,7 @@ final class ProfileViewController: UIViewController {
         loginNameLabel.text = profile.loginName
         descriptionLabel.text = profile.bio ?? "Описание отсутствует"
         
-        print("Profile details updated:") // Лог обновления профиля
+        print("Profile details updated:")
         print("Name: \(profile.name)")
         print("Login Name: \(profile.loginName)")
         print("Bio: \(profile.bio ?? "nil")")
@@ -127,7 +127,6 @@ final class ProfileViewController: UIViewController {
                 return
             }
             
-            print("Loading avatar from URL: \(avatarURL)")
             self.avatarImageView.kf.setImage(with: avatarURL, placeholder: UIImage(named: "avatar")) { result in
                 switch result {
                 case .success:
@@ -139,5 +138,64 @@ final class ProfileViewController: UIViewController {
         }
     }
     
-    
+    private func setupLogoutButton() {
+        logoutButton.addTarget(self, action: #selector(logoutTapped), for: .touchUpInside)
+    }
+
+    @objc private func logoutTapped() {
+        let alert = UIAlertController(
+            title: "Пока, пока!",
+            message: "Уверены что хотите выйти?",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Нет", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Да", style: .destructive) { [weak self] _ in
+            guard let self = self else { return }
+            ProfileLogoutService.shared.logout {
+                self.navigateToAuthScreen()
+            }
+        })
+        present(alert, animated: true)
+    }
+
+    // Метод для перехода на AuthViewController через Storyboard
+    private func navigateToAuthScreen() {
+        guard let window = UIApplication.shared.windows.first else {
+            print("Ошибка: окно не найдено")
+            return
+        }
+        
+        // Завершаем все представленные контроллеры перед установкой нового rootViewController
+        if let rootViewController = window.rootViewController {
+            rootViewController.dismiss(animated: false) {
+                self.setAuthAsRoot(in: window)
+            }
+        } else {
+            self.setAuthAsRoot(in: window)
+        }
+    }
+
+    private func setAuthAsRoot(in window: UIWindow) {
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        guard let authViewController = storyboard.instantiateViewController(withIdentifier: "AuthViewController") as? AuthViewController else {
+            print("Ошибка: AuthViewController не найден")
+            return
+        }
+        
+        authViewController.delegate = self
+        let navigationController = UINavigationController(rootViewController: authViewController)
+        window.rootViewController = navigationController
+        window.makeKeyAndVisible()
+        print("AuthViewController установлен как rootViewController")
+    }
+}
+
+extension ProfileViewController: AuthViewControllerDelegate {
+    func didAuthenticate(_ vc: AuthViewController) {
+        // Закрываем экран авторизации после успешного входа
+        vc.dismiss(animated: true) {
+            // Можно добавить логику, если нужно обновить интерфейс после авторизации
+            self.updateProfileDetails()
+        }
+    }
 }
