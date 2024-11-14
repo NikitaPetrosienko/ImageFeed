@@ -4,6 +4,7 @@ import Kingfisher
 final class ProfileViewController: UIViewController {
     private let profileService = ProfileService.shared
     private var profileImageServiceObserver: NSObjectProtocol?
+    private var animationLayers = [CALayer]() // Массив для хранения слоев анимации
 
     private let avatarImageView: UIImageView = {
         let imageView = UIImageView(image: UIImage(named: "avatar"))
@@ -52,6 +53,7 @@ final class ProfileViewController: UIViewController {
         view.backgroundColor = UIColor(named: "YPBlack")
         
         setupViews()
+        addGradientAnimations() // Добавляем анимацию при загрузке экрана
         updateProfileDetails()
         observeProfileImageUpdates()
         updateAvatar()
@@ -95,6 +97,7 @@ final class ProfileViewController: UIViewController {
         ) { [weak self] notification in
             guard let self = self else { return }
             self.updateAvatar()
+            self.removeGradientAnimations() // Удаляем анимацию после обновления аватара
         }
     }
     
@@ -104,6 +107,7 @@ final class ProfileViewController: UIViewController {
             profileService.loadProfile { [weak self] in
                 DispatchQueue.main.async {
                     self?.updateProfileDetails()
+                    self?.removeGradientAnimations() // Убираем анимацию после загрузки профиля
                 }
             }
             return
@@ -131,6 +135,7 @@ final class ProfileViewController: UIViewController {
                 switch result {
                 case .success:
                     print("Avatar successfully loaded")
+                    self.removeGradientAnimations() // Удаляем анимацию после загрузки аватара
                 case .failure(let error):
                     print("Failed to load avatar: \(error)")
                 }
@@ -158,14 +163,12 @@ final class ProfileViewController: UIViewController {
         present(alert, animated: true)
     }
 
-    // Метод для перехода на AuthViewController через Storyboard
     private func navigateToAuthScreen() {
         guard let window = UIApplication.shared.windows.first else {
             print("Ошибка: окно не найдено")
             return
         }
         
-        // Завершаем все представленные контроллеры перед установкой нового rootViewController
         if let rootViewController = window.rootViewController {
             rootViewController.dismiss(animated: false) {
                 self.setAuthAsRoot(in: window)
@@ -188,13 +191,60 @@ final class ProfileViewController: UIViewController {
         window.makeKeyAndVisible()
         print("AuthViewController установлен как rootViewController")
     }
+    
+    private func createGradientLayer(for frame: CGRect, cornerRadius: CGFloat) -> CAGradientLayer {
+        let gradient = CAGradientLayer()
+        gradient.frame = frame
+        gradient.cornerRadius = cornerRadius
+        gradient.locations = [0, 0.1, 0.3]
+        gradient.colors = [
+            UIColor(red: 0.682, green: 0.686, blue: 0.706, alpha: 1).cgColor,
+            UIColor(red: 0.531, green: 0.533, blue: 0.553, alpha: 1).cgColor,
+            UIColor(red: 0.431, green: 0.433, blue: 0.453, alpha: 1).cgColor
+        ]
+        gradient.startPoint = CGPoint(x: 0, y: 0.5)
+        gradient.endPoint = CGPoint(x: 1, y: 0.5)
+        
+        let gradientChangeAnimation = CABasicAnimation(keyPath: "locations")
+        gradientChangeAnimation.duration = 1.0
+        gradientChangeAnimation.repeatCount = .infinity
+        gradientChangeAnimation.fromValue = [0, 0.1, 0.3]
+        gradientChangeAnimation.toValue = [0, 0.8, 1]
+        gradient.add(gradientChangeAnimation, forKey: "locationsChange")
+        
+        return gradient
+    }
+    
+    private func addGradientAnimations() {
+        // Убедимся, что анимация добавлена только один раз
+        guard animationLayers.isEmpty else { return }
+        
+        let avatarGradient = createGradientLayer(for: avatarImageView.bounds, cornerRadius: 35)
+        avatarImageView.layer.addSublayer(avatarGradient)
+        animationLayers.append(avatarGradient)
+
+        let nameGradient = createGradientLayer(for: nameLabel.bounds, cornerRadius: 0)
+        nameLabel.layer.addSublayer(nameGradient)
+        animationLayers.append(nameGradient)
+
+        let loginGradient = createGradientLayer(for: loginNameLabel.bounds, cornerRadius: 0)
+        loginNameLabel.layer.addSublayer(loginGradient)
+        animationLayers.append(loginGradient)
+
+        let descriptionGradient = createGradientLayer(for: descriptionLabel.bounds, cornerRadius: 0)
+        descriptionLabel.layer.addSublayer(descriptionGradient)
+        animationLayers.append(descriptionGradient)
+    }
+    
+    private func removeGradientAnimations() {
+        animationLayers.forEach { $0.removeFromSuperlayer() }
+        animationLayers.removeAll()
+    }
 }
 
 extension ProfileViewController: AuthViewControllerDelegate {
     func didAuthenticate(_ vc: AuthViewController) {
-        // Закрываем экран авторизации после успешного входа
         vc.dismiss(animated: true) {
-            // Можно добавить логику, если нужно обновить интерфейс после авторизации
             self.updateProfileDetails()
         }
     }
