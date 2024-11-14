@@ -2,18 +2,18 @@ import UIKit
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
-
+    
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
-
+        
         let window = UIWindow(windowScene: windowScene)
         self.window = window
-
+        
         let splashViewController = SplashViewController()
         window.rootViewController = splashViewController
         window.makeKeyAndVisible()
     }
-
+    
     func showAuthViewController() {
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         guard let authViewController = storyboard.instantiateViewController(withIdentifier: "AuthViewController") as? AuthViewController else {
@@ -24,7 +24,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window?.rootViewController = navigationController
         window?.makeKeyAndVisible()
     }
-
+    
     func showMainViewController() {
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         guard let tabBarController = storyboard.instantiateViewController(withIdentifier: "TabBarViewController") as? UITabBarController else {

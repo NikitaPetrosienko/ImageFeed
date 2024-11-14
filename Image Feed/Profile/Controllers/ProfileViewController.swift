@@ -5,7 +5,7 @@ final class ProfileViewController: UIViewController {
     private let profileService = ProfileService.shared
     private var profileImageServiceObserver: NSObjectProtocol?
     private var animationLayers = [CALayer]() // Массив для хранения слоев анимации
-
+    
     private let avatarImageView: UIImageView = {
         let imageView = UIImageView(image: UIImage(named: "avatar"))
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -14,7 +14,7 @@ final class ProfileViewController: UIViewController {
         imageView.layer.masksToBounds = true
         return imageView
     }()
-
+    
     private let nameLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 23, weight: .semibold)
@@ -22,7 +22,7 @@ final class ProfileViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-
+    
     private let loginNameLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 13)
@@ -30,7 +30,7 @@ final class ProfileViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-
+    
     private let descriptionLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 13)
@@ -38,7 +38,7 @@ final class ProfileViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-
+    
     private let logoutButton: UIButton = {
         let button = UIButton(type: .custom)
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -47,7 +47,7 @@ final class ProfileViewController: UIViewController {
         }
         return button
     }()
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor(named: "YPBlack")
@@ -131,11 +131,11 @@ final class ProfileViewController: UIViewController {
                 return
             }
             
-            self.avatarImageView.kf.setImage(with: avatarURL, placeholder: UIImage(named: "avatar")) { result in
+            self.avatarImageView.kf.setImage(with: avatarURL, placeholder: UIImage(named: "avatar")) { [weak self] result in
                 switch result {
                 case .success:
                     print("Avatar successfully loaded")
-                    self.removeGradientAnimations() // Удаляем анимацию после загрузки аватара
+                    self?.removeGradientAnimations() // Удаляем анимацию после загрузки аватара
                 case .failure(let error):
                     print("Failed to load avatar: \(error)")
                 }
@@ -146,7 +146,7 @@ final class ProfileViewController: UIViewController {
     private func setupLogoutButton() {
         logoutButton.addTarget(self, action: #selector(logoutTapped), for: .touchUpInside)
     }
-
+    
     @objc private func logoutTapped() {
         let alert = UIAlertController(
             title: "Пока, пока!",
@@ -162,7 +162,7 @@ final class ProfileViewController: UIViewController {
         })
         present(alert, animated: true)
     }
-
+    
     private func navigateToAuthScreen() {
         guard let window = UIApplication.shared.windows.first else {
             print("Ошибка: окно не найдено")
@@ -174,10 +174,10 @@ final class ProfileViewController: UIViewController {
                 self.setAuthAsRoot(in: window)
             }
         } else {
-            self.setAuthAsRoot(in: window)
+            setAuthAsRoot(in: window)
         }
     }
-
+    
     private func setAuthAsRoot(in window: UIWindow) {
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         guard let authViewController = storyboard.instantiateViewController(withIdentifier: "AuthViewController") as? AuthViewController else {
@@ -222,15 +222,15 @@ final class ProfileViewController: UIViewController {
         let avatarGradient = createGradientLayer(for: avatarImageView.bounds, cornerRadius: 35)
         avatarImageView.layer.addSublayer(avatarGradient)
         animationLayers.append(avatarGradient)
-
+        
         let nameGradient = createGradientLayer(for: nameLabel.bounds, cornerRadius: 0)
         nameLabel.layer.addSublayer(nameGradient)
         animationLayers.append(nameGradient)
-
+        
         let loginGradient = createGradientLayer(for: loginNameLabel.bounds, cornerRadius: 0)
         loginNameLabel.layer.addSublayer(loginGradient)
         animationLayers.append(loginGradient)
-
+        
         let descriptionGradient = createGradientLayer(for: descriptionLabel.bounds, cornerRadius: 0)
         descriptionLabel.layer.addSublayer(descriptionGradient)
         animationLayers.append(descriptionGradient)
@@ -244,8 +244,8 @@ final class ProfileViewController: UIViewController {
 
 extension ProfileViewController: AuthViewControllerDelegate {
     func didAuthenticate(_ vc: AuthViewController) {
-        vc.dismiss(animated: true) {
-            self.updateProfileDetails()
+        vc.dismiss(animated: true) { [weak self] in
+            self?.updateProfileDetails()
         }
     }
 }

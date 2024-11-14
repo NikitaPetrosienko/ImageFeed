@@ -56,7 +56,7 @@ final class ImagesListCell: UITableViewCell {
         gradientLayer?.locations = [0, 0.5, 1]
         gradientLayer?.startPoint = CGPoint(x: 0, y: 0.5)
         gradientLayer?.endPoint = CGPoint(x: 1, y: 0.5)
-
+        
         // Анимация
         let animation = CABasicAnimation(keyPath: "locations")
         animation.fromValue = [0, 0.5, 1]
@@ -64,7 +64,7 @@ final class ImagesListCell: UITableViewCell {
         animation.duration = 1.0
         animation.repeatCount = .infinity
         gradientLayer?.add(animation, forKey: "locations")
-
+        
         cellImage.layer.addSublayer(gradientLayer!)
     }
     

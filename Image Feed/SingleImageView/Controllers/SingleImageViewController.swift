@@ -3,10 +3,10 @@ import Kingfisher
 
 final class SingleImageViewController: UIViewController {
     var imageURL: URL? // URL для загрузки полноразмерного изображения
-
+    
     @IBOutlet private var scrollView: UIScrollView!
     @IBOutlet private var imageView: UIImageView!
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         scrollView.delegate = self // Установка делегата scrollView
@@ -15,7 +15,7 @@ final class SingleImageViewController: UIViewController {
         
         loadImage()
     }
-
+    
     @IBAction private func didTapBackButton() {
         dismiss(animated: true, completion: nil)
     }
@@ -25,7 +25,7 @@ final class SingleImageViewController: UIViewController {
         let share = UIActivityViewController(activityItems: [image], applicationActivities: nil)
         present(share, animated: true, completion: nil)
     }
-
+    
     private func loadImage() {
         guard let url = imageURL else { return }
         

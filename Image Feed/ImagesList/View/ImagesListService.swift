@@ -9,6 +9,12 @@ final class ImagesListService {
     
     static let didChangeNotification = Notification.Name("ImagesListServiceDidChange")
     
+    private lazy var dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
+        return formatter
+    }()
+    
     private init() {}
     
     func fetchPhotosNextPage() {
@@ -48,11 +54,11 @@ final class ImagesListService {
                     Photo(
                         id: result.id,
                         size: CGSize(width: result.width, height: result.height),
-                        createdAt: DateFormatter().date(from: result.createdAt),
+                        createdAt: self.dateFormatter.date(from: result.createdAt),
                         welcomeDescription: result.description,
                         thumbImageURL: result.urls.thumb,
                         largeImageURL: result.urls.full,
-                        isLiked: result.likedByUser, 
+                        isLiked: result.likedByUser,
                         fullImageURL: result.urls.full
                     )
                 }
@@ -93,10 +99,8 @@ final class ImagesListService {
             if let httpResponse = response as? HTTPURLResponse {
                 print("Status Code: \(httpResponse.statusCode)")
                 if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
-                    // Успешный запрос
                     completion(.success(()))
                 } else {
-                    // Обработка ошибки с детальным статус-кодом
                     let error = NSError(
                         domain: "",
                         code: httpResponse.statusCode,
@@ -109,10 +113,11 @@ final class ImagesListService {
         
         task.resume()
     }
+    
     func clearData() {
-            photos.removeAll()
-            print("imagesListService: Данные профиля очищены")// Очищаем список изображений
-        }
+        photos.removeAll()
+        print("ImagesListService: Данные очищены")
+    }
 }
 
 struct Photo {
@@ -123,7 +128,7 @@ struct Photo {
     let thumbImageURL: String
     let largeImageURL: String
     var isLiked: Bool
-    let fullImageURL: String // Добавлено поле для полноразмерного изображения
+    let fullImageURL: String
 }
 
 struct PhotoResult: Codable {

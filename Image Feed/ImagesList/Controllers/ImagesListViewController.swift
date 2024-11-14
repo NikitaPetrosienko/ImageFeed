@@ -6,19 +6,18 @@ final class ImagesListViewController: UIViewController {
     private let showSingleImageSegueIdentifier = "ShowSingleImage"
     private let imagesListService = ImagesListService.shared
     private var photos: [Photo] = []
-
+    
     @IBOutlet private var tableView: UITableView!
-
+    
     private lazy var dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateStyle = .long
-        formatter.timeStyle = .none
+        formatter.dateFormat = "dd MMMM yyyy"
+        formatter.locale = Locale(identifier: "ru_RU")
         return formatter
     }()
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         
         tableView.rowHeight = 200
         tableView.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 12, right: 0)
@@ -34,7 +33,7 @@ final class ImagesListViewController: UIViewController {
         
         imagesListService.fetchPhotosNextPage()
     }
-
+    
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == showSingleImageSegueIdentifier,
            let destinationVC = segue.destination as? SingleImageViewController,
@@ -43,7 +42,7 @@ final class ImagesListViewController: UIViewController {
             destinationVC.imageURL = URL(string: photo.largeImageURL)
         }
     }
-
+    
     @objc private func updateTableViewAnimated() {
         let oldCount = photos.count
         let newCount = imagesListService.photos.count
@@ -56,17 +55,16 @@ final class ImagesListViewController: UIViewController {
             }
         }
     }
-
-    
 }
 
 extension ImagesListViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return photos.count
     }
-
+    
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: ImagesListCell.reuseIdentifier, for: indexPath) as! ImagesListCell
+        cell.selectionStyle = .none // Убираем выделение при нажатии
         let photo = photos[indexPath.row]
         cell.delegate = self
         cell.dateLabel.text = dateFormatter.string(from: photo.createdAt ?? Date())
@@ -89,7 +87,6 @@ extension ImagesListViewController: UITableViewDelegate {
             imagesListService.fetchPhotosNextPage()
         }
     }
-    
 }
 
 extension ImagesListViewController {
@@ -116,4 +113,3 @@ extension ImagesListViewController: ImagesListCellDelegate {
         toggleLike(for: photo, at: indexPath)
     }
 }
-
