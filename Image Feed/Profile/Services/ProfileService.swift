@@ -1,10 +1,10 @@
 import Foundation
 
 final class ProfileService {
-    static let shared = ProfileService()  // Синглтон для удобного доступа
+    static let shared = ProfileService()
     private init() {}
     
-    private(set) var profile: Profile?  // Переменная для хранения профиля
+    private(set) var profile: Profile?
     
     func fetchProfile(_ token: String, completion: @escaping (Result<Profile, Error>) -> Void) {
         guard let url = URL(string: "https://api.unsplash.com/me") else {
@@ -13,7 +13,7 @@ final class ProfileService {
         }
         
         var request = URLRequest(url: url)
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") // Заголовок с токеном
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
         let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
             guard let self = self else { return }
@@ -29,9 +29,8 @@ final class ProfileService {
             }
             
             do {
-                // Логируем полный JSON ответ для проверки
                 if let json = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers) {
-                    print("[ProfileService]: Full JSON response: \(json)")
+                    print(json)
                 }
                 
                 let profileResult = try JSONDecoder().decode(ProfileResult.self, from: data)
@@ -45,6 +44,7 @@ final class ProfileService {
         
         task.resume()
     }
+    
     func loadProfile(completion: @escaping () -> Void) {
         guard profile == nil else {
             completion()
@@ -63,9 +63,13 @@ final class ProfileService {
             }
         }
     }
+    
+    func clearData() {
+        profile = nil
+        print("ProfileService: Данные профиля очищены")
+    }
 }
 
-// Модели для профиля
 struct ProfileResult: Codable {
     let username: String
     let firstName: String?
@@ -91,9 +95,6 @@ struct Profile {
         self.name = "\(profileResult.firstName ?? "") \(profileResult.lastName ?? "")".trimmingCharacters(in: .whitespaces)
         self.loginName = "@\(profileResult.username)"
         self.bio = profileResult.bio
-        
-        // Логирование для проверки значения имени
         print("[Profile]: Initialized - name: \(name), loginName: \(loginName), bio: \(bio ?? "No bio")")
     }
 }
-
