@@ -3,10 +3,10 @@ import WebKit
 
 protocol AuthHelperProtocol {
     func authRequest() -> URLRequest
-    func code(from navigationAction: WKNavigationAction) -> String?
+    func code(from url: URL) -> String? // Изменяем тип параметра на URL
 }
 
-class AuthHelper: AuthHelperProtocol {
+final class AuthHelper: AuthHelperProtocol {
     private let configuration: AuthConfiguration
 
     init(configuration: AuthConfiguration = .standard) {
@@ -31,16 +31,13 @@ class AuthHelper: AuthHelperProtocol {
         return URLRequest(url: url)
     }
 
-    func code(from navigationAction: WKNavigationAction) -> String? {
-        guard
-            let url = navigationAction.request.url,
-            let urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false),
-            urlComponents.path == "/oauth/authorize/native",
-            let items = urlComponents.queryItems,
-            let codeItem = items.first(where: { $0.name == "code" })
-        else {
-            return nil
+    func code(from url: URL) -> String? { // Изменяем реализацию для работы с URL
+        if let urlComponents = URLComponents(string: url.absoluteString),
+           urlComponents.path == "/oauth/authorize/native",
+           let items = urlComponents.queryItems,
+           let codeItem = items.first(where: { $0.name == "code" }) {
+            return codeItem.value
         }
-        return codeItem.value
+        return nil
     }
 }

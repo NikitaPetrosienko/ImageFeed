@@ -34,6 +34,7 @@
 		D9C156382CEA08B700DDDAAE /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D9C156372CEA08B600DDDAAE /* XCTest.framework */; platformFilter = ios; };
 		D9C1563A2CEA092900DDDAAE /* WebViewViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9C156392CEA092900DDDAAE /* WebViewViewControllerTests.swift */; };
 		D9C1563C2CEA098C00DDDAAE /* MockNavigationAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9C1563B2CEA098C00DDDAAE /* MockNavigationAction.swift */; };
+		D9C1563E2CEA35FB00DDDAAE /* WebViewPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9C1563D2CEA35FB00DDDAAE /* WebViewPresenter.swift */; };
 		D9C27F282CC964DD00EEA336 /* ProgressHUD in Frameworks */ = {isa = PBXBuildFile; productRef = D9C27F272CC964DD00EEA336 /* ProgressHUD */; };
 		D9F5A58D2CE5F8B500A5AC13 /* ProfileLogoutService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F5A58C2CE5F8B500A5AC13 /* ProfileLogoutService.swift */; };
 		D9F5C4932CE0ABD300CF12D8 /* ImagesListService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F5C4922CE0ABD300CF12D8 /* ImagesListService.swift */; };
@@ -78,6 +79,7 @@
 		D9C156372CEA08B600DDDAAE /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/iPhoneOS.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 		D9C156392CEA092900DDDAAE /* WebViewViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewViewControllerTests.swift; sourceTree = "<group>"; };
 		D9C1563B2CEA098C00DDDAAE /* MockNavigationAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNavigationAction.swift; sourceTree = "<group>"; };
+		D9C1563D2CEA35FB00DDDAAE /* WebViewPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewPresenter.swift; sourceTree = "<group>"; };
 		D9F5A58C2CE5F8B500A5AC13 /* ProfileLogoutService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileLogoutService.swift; sourceTree = "<group>"; };
 		D9F5C4922CE0ABD300CF12D8 /* ImagesListService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagesListService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -166,6 +168,7 @@
 		D952C03C2C934127002A1BCC /* Auth */ = {
 			isa = PBXGroup;
 			children = (
+				D9C1563D2CEA35FB00DDDAAE /* WebViewPresenter.swift */,
 				D99B4BBF2CDCDC5400E7BC15 /* Controllers */,
 				D99B4BC12CDCDC8800E7BC15 /* Services */,
 				D99B4BC02CDCDC7000E7BC15 /* UI */,
@@ -419,6 +422,7 @@
 				D944F22A2CBD73360078664B /* OAuth2Service.swift in Sources */,
 				D9116F9F2CDA9D66004B1817 /* ProfileImageService.swift in Sources */,
 				7D3DFB1528DDF696005A13F3 /* ImagesListCell.swift in Sources */,
+				D9C1563E2CEA35FB00DDDAAE /* WebViewPresenter.swift in Sources */,
 				D945AAF32CDA8D190064F1E0 /* ProfileService.swift in Sources */,
 				D9C156282CEA066800DDDAAE /* AuthHelper.swift in Sources */,
 				D99B4BCA2CDCE1AB00E7BC15 /* TabBarController.swift in Sources */,
