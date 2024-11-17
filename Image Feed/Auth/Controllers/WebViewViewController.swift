@@ -1,8 +1,6 @@
 import UIKit
 import WebKit
 
-fileprivate let unsplashAuthorizeURLString = "https://unsplash.com/oauth/authorize"
-
 protocol WebViewViewControllerDelegate: AnyObject {
     func webViewViewController(_ vc: WebViewViewController, didAuthenticateWithCode code: String)
     func webViewViewControllerDidCancel(_ vc: WebViewViewController)
@@ -10,14 +8,20 @@ protocol WebViewViewControllerDelegate: AnyObject {
 
 final class WebViewViewController: UIViewController {
     weak var delegate: WebViewViewControllerDelegate?
-    
     private var estimatedProgressObservation: NSKeyValueObservation?
     
     @IBOutlet private var webView: WKWebView!
     @IBOutlet private var progressView: UIProgressView!
     
-    @IBAction private func didTapBackButton(_ sender: Any?) {
-        delegate?.webViewViewControllerDidCancel(self)
+    private let authHelper: AuthHelperProtocol
+    
+    init(authHelper: AuthHelperProtocol = AuthHelper()) {
+        self.authHelper = authHelper
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
     
     override func viewDidLoad() {
@@ -25,55 +29,33 @@ final class WebViewViewController: UIViewController {
         webView.navigationDelegate = self
         loadAuthorizationRequest()
         
-        estimatedProgressObservation = webView.observe(\.estimatedProgress, options: .new) { [weak self] _, change in
-            guard let self = self else { return }
-            self.progressView.progress = Float(self.webView.estimatedProgress)
-            
+        estimatedProgressObservation = webView.observe(\.estimatedProgress, options: .new) { [weak self] _, _ in
+            self?.updateProgress()
         }
     }
     
     private func loadAuthorizationRequest() {
-        guard var urlComponents = URLComponents(string: unsplashAuthorizeURLString) else {
-            print("❌ Ошибка: Невозможно создать URLComponents из строки \(unsplashAuthorizeURLString)")
-            return
-        }
-        urlComponents.queryItems = [
-            URLQueryItem(name: "client_id", value: Constants.accessKey),
-            URLQueryItem(name: "redirect_uri", value: Constants.redirectURI),
-            URLQueryItem(name: "response_type", value: "code"),
-            URLQueryItem(name: "scope", value: Constants.accessScope)
-        ]
-        
-        guard let url = urlComponents.url else {
-            print("❌ Ошибка: Невозможно получить URL из URLComponents \(urlComponents)")
-            return
-        }
-        
-        let request = URLRequest(url: url)
+        let request = authHelper.authRequest()
         webView.load(request)
+    }
+    
+    private func updateProgress() {
+        progressView.progress = Float(webView.estimatedProgress)
+        progressView.isHidden = fabs(webView.estimatedProgress - 1.0) <= 0.0001
+    }
+    
+    @IBAction private func didTapBackButton(_ sender: Any?) {
+        delegate?.webViewViewControllerDidCancel(self)
     }
 }
 
 extension WebViewViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-        if let code = code(from: navigationAction) {
+        if let code = authHelper.code(from: navigationAction) {
             delegate?.webViewViewController(self, didAuthenticateWithCode: code)
             decisionHandler(.cancel)
         } else {
             decisionHandler(.allow)
-        }
-    }
-    
-    private func code(from navigationAction: WKNavigationAction) -> String? {
-        if
-            let url = navigationAction.request.url,
-            let urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false),
-            urlComponents.path == "/oauth/authorize/native",
-            let items = urlComponents.queryItems,
-            let codeItem = items.first(where: { $0.name == "code" }) {
-            return codeItem.value
-        } else {
-            return nil
         }
     }
 }
