@@ -13,7 +13,7 @@ final class AuthViewController: UIViewController {
     @IBAction func loginButtonTapped(_ sender: UIButton) {
         guard !UIBlockingProgressHUD.isVisible else { return }
         UIBlockingProgressHUD.show()
-        performSegue(withIdentifier: "ShowWebView", sender: nil)  // Переход к WebView для авторизации
+        performSegue(withIdentifier: "ShowWebView", sender: nil)
     }
     
     override func viewDidLoad() {
@@ -30,10 +30,13 @@ final class AuthViewController: UIViewController {
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "ShowWebView" {
             guard let webViewVC = segue.destination as? WebViewViewController else { return }
-            webViewVC.delegate = self  // Устанавливаем делегат для получения кода авторизации
+            let authHelper = AuthHelper(configuration: .standard)
+            let webViewPresenter = WebViewPresenter(authHelper: authHelper)
+            webViewVC.presenter = webViewPresenter
+            webViewPresenter.view = webViewVC
+            webViewVC.delegate = self
         }
     }
-    
     private func configureBackButton() {
         navigationController?.navigationBar.backIndicatorImage = UIImage(named: "nav_back_button")
         navigationController?.navigationBar.backIndicatorTransitionMaskImage = UIImage(named: "nav_back_button")
@@ -81,7 +84,7 @@ extension AuthViewController: WebViewViewControllerDelegate {
         alert.addAction(UIAlertAction(title: "Ок", style: .default))
         present(alert, animated: true)
     }
-
+    
     
     func webViewViewControllerDidCancel(_ vc: WebViewViewController) {
         dismiss(animated: true, completion: nil)

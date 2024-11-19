@@ -15,7 +15,7 @@ final class ProfileService {
         var request = URLRequest(url: url)
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+        let task = URLSession.shared.dataTask(with: request) { [weak self] data, _, error in
             guard let self = self else { return }
             
             if let error = error {
@@ -29,14 +29,11 @@ final class ProfileService {
             }
             
             do {
-                if let json = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers) {
-                    print(json)
-                }
-                
                 let profileResult = try JSONDecoder().decode(ProfileResult.self, from: data)
                 let profile = Profile(from: profileResult)
                 self.profile = profile
                 completion(.success(profile))
+                print("[ProfileService] Profile fetched: \(profile.name)")
             } catch {
                 completion(.failure(error))
             }
@@ -45,30 +42,22 @@ final class ProfileService {
         task.resume()
     }
     
-    func loadProfile(completion: @escaping () -> Void) {
-        guard profile == nil else {
-            completion()
+    func loadProfile(completion: @escaping (Result<Profile, Error>) -> Void) {
+        guard let token = OAuth2TokenStorage().token else {
+            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Token not found"])))
             return
         }
         
-        let token = OAuth2TokenStorage().token ?? ""
-        fetchProfile(token) { [weak self] result in
-            switch result {
-            case .success(let profile):
-                self?.profile = profile
-                completion()
-            case .failure(let error):
-                print("Error loading profile: \(error)")
-                completion()
-            }
-        }
+        fetchProfile(token, completion: completion)
     }
     
     func clearData() {
         profile = nil
-        print("ProfileService: Данные профиля очищены")
+        print("[ProfileService] Profile data cleared")
     }
 }
+
+// MARK: - Models
 
 struct ProfileResult: Codable {
     let username: String
@@ -95,6 +84,6 @@ struct Profile {
         self.name = "\(profileResult.firstName ?? "") \(profileResult.lastName ?? "")".trimmingCharacters(in: .whitespaces)
         self.loginName = "@\(profileResult.username)"
         self.bio = profileResult.bio
-        print("[Profile]: Initialized - name: \(name), loginName: \(loginName), bio: \(bio ?? "No bio")")
+        print("[Profile] Initialized: \(name), \(loginName), \(bio ?? "No bio")")
     }
 }

@@ -2,9 +2,14 @@ import UIKit
 import Kingfisher
 
 final class ProfileViewController: UIViewController {
-    private let profileService = ProfileService.shared
-    private var profileImageServiceObserver: NSObjectProtocol?
-    private var animationLayers = [CALayer]() // Массив для хранения слоев анимации
+    var presenter: ProfilePresenterProtocol?
+    
+    func configure(_ presenter: ProfilePresenterProtocol) {
+        self.presenter = presenter
+        presenter.view = self
+    }
+
+    private var animationLayers = [CALayer]() // Для хранения слоев анимации
     
     private let avatarImageView: UIImageView = {
         let imageView = UIImageView(image: UIImage(named: "avatar"))
@@ -15,8 +20,9 @@ final class ProfileViewController: UIViewController {
         return imageView
     }()
     
-    private let nameLabel: UILabel = {
+    let nameLabel: UILabel = {
         let label = UILabel()
+        label.accessibilityIdentifier = "nameLabel"
         label.font = UIFont.systemFont(ofSize: 23, weight: .semibold)
         label.textColor = .white
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -25,6 +31,7 @@ final class ProfileViewController: UIViewController {
     
     private let loginNameLabel: UILabel = {
         let label = UILabel()
+        label.accessibilityIdentifier = "loginNameLabel"
         label.font = UIFont.systemFont(ofSize: 13)
         label.textColor = UIColor(red: 174/255, green: 175/255, blue: 180/255, alpha: 1.0)
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -41,6 +48,7 @@ final class ProfileViewController: UIViewController {
     
     private let logoutButton: UIButton = {
         let button = UIButton(type: .custom)
+        button.accessibilityIdentifier = "logoutButton"
         button.translatesAutoresizingMaskIntoConstraints = false
         if let buttonImage = UIImage(named: "logout_button") {
             button.setImage(buttonImage, for: .normal)
@@ -53,10 +61,8 @@ final class ProfileViewController: UIViewController {
         view.backgroundColor = UIColor(named: "YPBlack")
         
         setupViews()
-        addGradientAnimations() // Добавляем анимацию при загрузке экрана
-        updateProfileDetails()
-        observeProfileImageUpdates()
-        updateAvatar()
+        addGradientAnimations() // Добавляем анимации при загрузке
+        presenter?.viewDidLoad()
         setupLogoutButton()
     }
     
@@ -89,109 +95,34 @@ final class ProfileViewController: UIViewController {
         ])
     }
     
-    private func observeProfileImageUpdates() {
-        profileImageServiceObserver = NotificationCenter.default.addObserver(
-            forName: ProfileImageService.didChangeNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self = self else { return }
-            self.updateAvatar()
-            self.removeGradientAnimations() // Удаляем анимацию после обновления аватара
-        }
-    }
-    
-    private func updateProfileDetails() {
-        guard let profile = profileService.profile else {
-            print("Profile is not loaded yet. Requesting profile...")
-            profileService.loadProfile { [weak self] in
-                DispatchQueue.main.async {
-                    self?.updateProfileDetails()
-                    self?.removeGradientAnimations() // Убираем анимацию после загрузки профиля
-                }
-            }
-            return
-        }
-        
-        nameLabel.text = profile.name.isEmpty ? "Неизвестный пользователь" : profile.name
-        loginNameLabel.text = profile.loginName
-        descriptionLabel.text = profile.bio ?? "Описание отсутствует"
-        
-        print("Profile details updated:")
-        print("Name: \(profile.name)")
-        print("Login Name: \(profile.loginName)")
-        print("Bio: \(profile.bio ?? "nil")")
-    }
-    
-    private func updateAvatar() {
-        DispatchQueue.main.async {
-            guard let avatarURLString = ProfileImageService.shared.avatarURL,
-                  let avatarURL = URL(string: avatarURLString) else {
-                print("Avatar URL not found or invalid")
-                return
-            }
-            
-            self.avatarImageView.kf.setImage(with: avatarURL, placeholder: UIImage(named: "avatar")) { [weak self] result in
-                switch result {
-                case .success:
-                    print("Avatar successfully loaded")
-                    self?.removeGradientAnimations() // Удаляем анимацию после загрузки аватара
-                case .failure(let error):
-                    print("Failed to load avatar: \(error)")
-                }
-            }
-        }
-    }
-    
     private func setupLogoutButton() {
         logoutButton.addTarget(self, action: #selector(logoutTapped), for: .touchUpInside)
     }
     
-    @objc private func logoutTapped() {
-        let alert = UIAlertController(
-            title: "Пока, пока!",
-            message: "Уверены что хотите выйти?",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "Нет", style: .cancel))
-        alert.addAction(UIAlertAction(title: "Да", style: .destructive) { [weak self] _ in
-            guard let self = self else { return }
-            ProfileLogoutService.shared.logout {
-                self.navigateToAuthScreen()
-            }
-        })
-        present(alert, animated: true)
+    @objc func logoutTapped() {
+        presenter?.logoutTapped()
     }
     
-    private func navigateToAuthScreen() {
+    func redirectToAuthScreen() {
         guard let window = UIApplication.shared.windows.first else {
             print("Ошибка: окно не найдено")
             return
         }
-        
-        if let rootViewController = window.rootViewController {
-            rootViewController.dismiss(animated: false) {
-                self.setAuthAsRoot(in: window)
-            }
-        } else {
-            setAuthAsRoot(in: window)
-        }
-    }
-    
-    private func setAuthAsRoot(in window: UIWindow) {
+
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         guard let authViewController = storyboard.instantiateViewController(withIdentifier: "AuthViewController") as? AuthViewController else {
             print("Ошибка: AuthViewController не найден")
             return
         }
-        
-        authViewController.delegate = self
+
         let navigationController = UINavigationController(rootViewController: authViewController)
         window.rootViewController = navigationController
         window.makeKeyAndVisible()
-        print("AuthViewController установлен как rootViewController")
     }
-    
+}
+
+// MARK: - Gradient Animations
+extension ProfileViewController {
     private func createGradientLayer(for frame: CGRect, cornerRadius: CGFloat) -> CAGradientLayer {
         let gradient = CAGradientLayer()
         gradient.frame = frame
@@ -204,48 +135,93 @@ final class ProfileViewController: UIViewController {
         ]
         gradient.startPoint = CGPoint(x: 0, y: 0.5)
         gradient.endPoint = CGPoint(x: 1, y: 0.5)
-        
+
         let gradientChangeAnimation = CABasicAnimation(keyPath: "locations")
         gradientChangeAnimation.duration = 1.0
         gradientChangeAnimation.repeatCount = .infinity
         gradientChangeAnimation.fromValue = [0, 0.1, 0.3]
         gradientChangeAnimation.toValue = [0, 0.8, 1]
         gradient.add(gradientChangeAnimation, forKey: "locationsChange")
-        
+
         return gradient
     }
     
     private func addGradientAnimations() {
-        // Убедимся, что анимация добавлена только один раз
         guard animationLayers.isEmpty else { return }
-        
+
         let avatarGradient = createGradientLayer(for: avatarImageView.bounds, cornerRadius: 35)
         avatarImageView.layer.addSublayer(avatarGradient)
         animationLayers.append(avatarGradient)
-        
+
         let nameGradient = createGradientLayer(for: nameLabel.bounds, cornerRadius: 0)
         nameLabel.layer.addSublayer(nameGradient)
         animationLayers.append(nameGradient)
-        
+
         let loginGradient = createGradientLayer(for: loginNameLabel.bounds, cornerRadius: 0)
         loginNameLabel.layer.addSublayer(loginGradient)
         animationLayers.append(loginGradient)
-        
+
         let descriptionGradient = createGradientLayer(for: descriptionLabel.bounds, cornerRadius: 0)
         descriptionLabel.layer.addSublayer(descriptionGradient)
         animationLayers.append(descriptionGradient)
     }
-    
+
     private func removeGradientAnimations() {
         animationLayers.forEach { $0.removeFromSuperlayer() }
         animationLayers.removeAll()
     }
 }
 
-extension ProfileViewController: AuthViewControllerDelegate {
-    func didAuthenticate(_ vc: AuthViewController) {
-        vc.dismiss(animated: true) { [weak self] in
-            self?.updateProfileDetails()
+// MARK: - ProfileViewControllerProtocol
+extension ProfileViewController: ProfileViewControllerProtocol {
+    func updateProfile(name: String, login: String, bio: String?) {
+        DispatchQueue.main.async { [weak self] in
+            self?.nameLabel.text = name
+            self?.loginNameLabel.text = login
+            self?.descriptionLabel.text = bio ?? "Описание отсутствует"
+            self?.removeGradientAnimations()
         }
     }
+
+    func updateAvatar(url: URL?) {
+        DispatchQueue.main.async { [weak self] in
+            self?.avatarImageView.kf.setImage(with: url, placeholder: UIImage(named: "avatar"))
+            self?.removeGradientAnimations()
+        }
+    }
+
+    func showLogoutConfirmation() {
+        let alert = UIAlertController(
+            title: "Пока, пока!",
+            message: "Уверены что хотите выйти?",
+            preferredStyle: .alert
+        )
+        
+        // Кнопка "Нет"
+        let cancelAction = UIAlertAction(title: "Нет", style: .cancel)
+        alert.addAction(cancelAction)
+        
+        // Кнопка "Да"
+        let confirmAction = UIAlertAction(title: "Да", style: .destructive) { [weak self] _ in
+            self?.presenter?.performLogout()
+        }
+        alert.addAction(confirmAction)
+        
+        // Устанавливаем идентификаторы через view после презентации
+        DispatchQueue.main.async {
+            if let alertView = alert.view {
+                alertView.accessibilityIdentifier = "logoutAlert"
+            }
+            if let cancelButton = alert.actions.first(where: { $0.title == "Нет" })?.value(forKey: "__representer") as? NSObject {
+                cancelButton.setValue("cancelLogoutButton", forKey: "accessibilityIdentifier")
+            }
+            if let confirmButton = alert.actions.first(where: { $0.title == "Да" })?.value(forKey: "__representer") as? NSObject {
+                confirmButton.setValue("confirmLogoutButton", forKey: "accessibilityIdentifier")
+            }
+        }
+        
+        present(alert, animated: true)
+    }
+
+
 }

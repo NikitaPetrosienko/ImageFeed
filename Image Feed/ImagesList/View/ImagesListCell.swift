@@ -11,7 +11,11 @@ final class ImagesListCell: UITableViewCell {
     weak var delegate: ImagesListCellDelegate?
     
     @IBOutlet var cellImage: UIImageView!
-    @IBOutlet var likeButton: UIButton!
+    @IBOutlet var likeButton: UIButton! {
+        didSet {
+            likeButton.accessibilityIdentifier = "likeButton"
+        }
+    }
     @IBOutlet var dateLabel: UILabel!
     
     private var gradientLayer: CAGradientLayer?
