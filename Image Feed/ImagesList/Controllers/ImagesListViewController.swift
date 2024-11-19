@@ -11,7 +11,11 @@ final class ImagesListViewController: UIViewController, ImagesListViewController
     private let showSingleImageSegueIdentifier = "ShowSingleImage"
     var presenter: ImagesListPresenterProtocol?
 
-    @IBOutlet private var tableView: UITableView!
+    @IBOutlet private var tableView: UITableView! {
+        didSet {
+            tableView.accessibilityIdentifier = "feedTable"
+        }
+    }
 
     private lazy var dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -47,14 +51,22 @@ final class ImagesListViewController: UIViewController, ImagesListViewController
     func updateTableViewAnimated(oldCount: Int, newCount: Int) {
         guard newCount > oldCount else { return }
         let indexPaths = (oldCount..<newCount).map { IndexPath(row: $0, section: 0) }
+        
+        // Проверяем корректность данных перед обновлением
         tableView.performBatchUpdates({
-            tableView.insertRows(at: indexPaths, with: .automatic)
+            if tableView.numberOfRows(inSection: 0) == oldCount {
+                tableView.insertRows(at: indexPaths, with: .automatic)
+            } else {
+                tableView.reloadData()
+            }
         })
     }
 
     func reloadCell(at index: Int) {
         let indexPath = IndexPath(row: index, section: 0)
-        tableView.reloadRows(at: [indexPath], with: .automatic)
+        if tableView.numberOfRows(inSection: 0) > index {
+            tableView.reloadRows(at: [indexPath], with: .automatic)
+        }
     }
 }
 
@@ -74,6 +86,8 @@ extension ImagesListViewController: UITableViewDataSource {
                 for: .normal
             )
             cell.cellImage.kf.setImage(with: URL(string: photo.thumbImageURL))
+            cell.likeButton.accessibilityIdentifier = "likeButton"
+
         }
         return cell
     }

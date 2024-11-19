@@ -4,6 +4,7 @@ protocol ProfileViewControllerProtocol: AnyObject {
     func updateProfile(name: String, login: String, bio: String?)
     func updateAvatar(url: URL?)
     func showLogoutConfirmation()
+    func redirectToAuthScreen() // Добавлен метод для перехода на экран авторизации
 }
 
 protocol ProfilePresenterProtocol: AnyObject {
@@ -19,12 +20,13 @@ final class ProfilePresenter: ProfilePresenterProtocol {
     private let profileService = ProfileService.shared
     private let profileImageService = ProfileImageService.shared
     private var profileImageServiceObserver: NSObjectProtocol?
-    
+    private let logoutService = ProfileLogoutService.shared // Добавлен сервис для логаута
+
     func viewDidLoad() {
         updateProfile()
         observeProfileImageUpdates()
     }
-    
+
     private func updateProfile() {
         guard let profile = profileService.profile else {
             profileService.loadProfile { [weak self] result in
@@ -45,7 +47,7 @@ final class ProfilePresenter: ProfilePresenterProtocol {
             bio: profile.bio ?? "Описание отсутствует"
         )
     }
-    
+
     private func observeProfileImageUpdates() {
         profileImageServiceObserver = NotificationCenter.default.addObserver(
             forName: ProfileImageService.didChangeNotification,
@@ -56,20 +58,21 @@ final class ProfilePresenter: ProfilePresenterProtocol {
         }
         updateAvatar()
     }
-    
+
     func updateAvatar() {
         guard let avatarURLString = profileImageService.avatarURL,
               let avatarURL = URL(string: avatarURLString) else { return }
         view?.updateAvatar(url: avatarURL)
     }
-    
+
     func logoutTapped() {
         view?.showLogoutConfirmation()
     }
-    
+
     func performLogout() {
-        ProfileLogoutService.shared.logout {
+        logoutService.logout { [weak self] in
             print("Logged out successfully")
+            self?.view?.redirectToAuthScreen() // Переход на экран авторизации после успешного логаута
         }
     }
 }

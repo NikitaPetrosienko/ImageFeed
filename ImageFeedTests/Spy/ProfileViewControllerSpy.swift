@@ -5,6 +5,7 @@ final class ProfileViewControllerSpy: ProfileViewControllerProtocol {
     var updateProfileCalled = false
     var updateAvatarCalled = false
     var showLogoutConfirmationCalled = false
+    var redirectToAuthScreenCalled = false
 
     func updateProfile(name: String, login: String, bio: String?) {
         updateProfileCalled = true
@@ -16,5 +17,9 @@ final class ProfileViewControllerSpy: ProfileViewControllerProtocol {
 
     func showLogoutConfirmation() {
         showLogoutConfirmationCalled = true
+    }
+
+    func redirectToAuthScreen() {
+        redirectToAuthScreenCalled = true
     }
 }

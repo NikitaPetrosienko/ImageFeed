@@ -18,7 +18,11 @@ final class WebViewViewController: UIViewController & WebViewViewControllerProto
     var presenter: WebViewPresenterProtocol?
     
     private var estimatedProgressObservation: NSKeyValueObservation?
-    @IBOutlet private var webView: WKWebView!
+    @IBOutlet private var webView: WKWebView! {
+        didSet {
+            webView.accessibilityIdentifier = "UnsplashWebView"
+        }
+    }
     @IBOutlet private var progressView: UIProgressView!
     
     override func viewDidLoad() {
